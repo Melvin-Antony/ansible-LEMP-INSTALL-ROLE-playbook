@@ -1,38 +1,55 @@
 Role Name
 =========
 
-A brief description of the role goes here.
+This role can be used to install LEMP over Ubuntu. Clone this repository to the default role directory /etc/ansible/roles
+
+- Features:
+   - Fully configurable and compatible with AWS
+   - Flexible and feature rich with easy customization of roles
+   - Can be modified to support additional modules
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+EC2 role to deploy EC2s. A sample can be found in my other repository at https://github.com/Melvin-Antony/ansible-EC2-creation-ROLE
 
-Role Variables
---------------
-
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
-
-Dependencies
-------------
-
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
 
 Example Playbook
 ----------------
 
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+```
+---
+- name: "EC2 creation:"
+  hosts: localhost
+  gather_facts: False
+  become: yes
+  roles: 
+        - ec2
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
 
-License
--------
+  tasks:
+      - name: "Aws InfraStructure Creation - Inventory Creation"
+        add_host:
+            groups: webservers
+            name: "{{ item.public_ip }}"
+            ansible_host: "{{ item.public_ip }}"
+            ansible_port: 22
+            ansible_user: ubuntu
+            ansible_ssh_private_key_file: server-private.pem
+            ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        with_items:
+            - "{{ ec2_out.tagged_instances }}"
 
-BSD
 
-Author Information
-------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+- name: "LEMP installation:"
+  hosts: webservers
+  gather_facts: False
+  become: yes
+  roles: 
+        - lemp
+  ```
+  
+  
+  NOTE: Dynamic inventory creatin may not work properly within the Role. So wrote it within the playbook.
