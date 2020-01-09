@@ -1,0 +1,5 @@
+---
+mysql_root_password: "root123"
+http_host: "melvin.com"
+http_conf: "melvin.com.conf"
+http_port: "80"

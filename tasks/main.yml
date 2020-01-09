@@ -1,0 +1,66 @@
+---
+- name: Install LEMP Packages
+  apt: name={{ item }} update_cache=yes state=present
+  loop: [ 'nginx', 'mysql-server', 'python3-pymysql', 'php-fpm', 'php-mysql' ]
+
+- name: Sets Nginx conf file
+  template:
+       src: "nginx.conf.tmpl"
+       dest: "/etc/nginx/sites-available/{{ http_conf }}"
+  notify: Restart-Nginx
+
+- name: Enables new site
+  file:
+    src: "/etc/nginx/sites-available/{{ http_conf }}"
+    dest: "/etc/nginx/sites-enabled/{{ http_conf }}"
+    state: link
+
+- name: Removes "default" site
+  file:
+       path: "/etc/nginx/sites-enabled/default"
+       state: absent
+  notify: Restart-Nginx
+
+- name : Starting mysql
+  service : name=mysql state=started enabled=true
+
+
+- name: "Reset Root-Password"
+  ignore_errors: true
+  sudo : yes
+  mysql_user:
+        check_implicit_admin: yes
+        login_user: 'root'
+        login_password: ''
+        user: 'root'
+        password: '{{ mysql_root_password }}'
+        host_all: true
+  tags:
+        - lamp
+        - mariadb
+        
+- name: " Removing Anonymous Users"
+  mysql_user:
+        login_user: 'root'
+        login_password: '{{ mysql_root_password }}'
+        user: ''
+        host_all: true
+        state: absent
+  tags:
+        - lamp
+        - mariadb
+        
+- name: "Removing test database"
+  mysql_db:
+        login_user: 'root'
+        login_password: '{{ mysql_root_password }}'
+        name: 'test'
+        state: absent
+
+
+- file: path=/var/www/html state=directory 
+
+- name: Sets Up PHP Info Page
+  copy:
+       src: "info.php"
+       dest: "/var/www/html/info.php"
